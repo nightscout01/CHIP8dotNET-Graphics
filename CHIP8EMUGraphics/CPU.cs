@@ -15,6 +15,7 @@ namespace CHIP8EMUGraphics
         private System.Diagnostics.Stopwatch stopWatch;
         private long timestamp;
         private byte[] Vreg;
+        private byte[] graphicsArray;
         private Dictionary<byte, Key> keyboardMapping;
         // ushort is an unsigned 16 bit integer (VS complains when using UInt16)
         private ushort I;  // index register, 16 bits  (NOT THE INSTRUCTION POINTER)
@@ -28,14 +29,13 @@ namespace CHIP8EMUGraphics
 
         private Stack<ushort> programStack;
         private ushort SP;  // the stack pointer.
-
-
+        private CHIP8Graphics graphicsAdapter;
         private ushort currentOPCode;  // CHIP-8 opcodes are 16 bits long (maybe we don't need this as a global)
         private readonly Random rnd;  // a random number generator
 
         //  private Dictionary<int, Func<ushort, bool>> lookupTable = new Dictionary<int, Func<ushort, bool>>();
 
-        public CPU(byte[] RAM, Dictionary<byte, Key> keyboardMapping)
+        public CPU(byte[] RAM, Dictionary<byte, Key> keyboardMapping, CHIP8Graphics graphicsAdapter)
         {
             memory = RAM;  // take our emulated RAM, with our program already loaded in
             //this.clock_speed = clock_speed;  // set our clock speed, so we can know when to decrement our timers
@@ -43,6 +43,8 @@ namespace CHIP8EMUGraphics
             this.keyboardMapping = keyboardMapping;  // set our keyboard map to the one passed in.
             delay_timer = 0;
             sound_timer = 0;
+            this.graphicsAdapter = graphicsAdapter;
+            graphicsArray = new byte[2048];
             timestamp = 0;
             programStack = new Stack<ushort>(16);  // this is implemented as an array under the hood, I hope it's fast enough for our use.
             Vreg = new byte[16];  // there are 16 "V" registers, it's way easier for everyone involved if we just store them in an array.
@@ -138,7 +140,9 @@ namespace CHIP8EMUGraphics
                     switch (opCode & 0x000F)
                     {
                         case 0x0000:  //0x00E0, clears the screen
-                            // DO FANCY GRAPHICS SIGNALING HERE
+                            graphicsArray = new byte[2048];  // just reallocate the dang thing. 
+                            graphicsAdapter.ClearScreen();
+                            PC += 2;
                             break;
                         case 0x000E:  // 0x00EE, return from subroutine
                             SP--;  // decrement stack pointer
@@ -289,6 +293,21 @@ namespace CHIP8EMUGraphics
                                * and to 0 if that doesn’t happen
                                */
                               // Do some fancy signaling to notify graphics subsystem.
+                    Vreg[0xF] = 0;  // set this to zero before we start
+                    for (ushort yG = 0; yG < lastFourBits; ++yG)
+                    {
+                        byte mY = memory[I + yG];
+                        for (ushort xG = 0; xG < 8; ++xG)
+                        {
+                            if ((mY & (0x80 >> xG)) != 0)
+                            {
+                                ushort pixel = (ushort)(((Vx + xG) + ((Vy + yG) << 6)) % 2048);
+                                Vreg[0xF] |= (byte) (graphicsArray[pixel] & 1);  // so much casting
+                                graphicsArray[pixel] = (byte) ~graphicsArray[pixel];
+                            }
+                        }
+                    }
+                   // graphicsAdapter.
                     PC += 2;
                     break;
                 case 0xE000:  // opcode 0xEXNN

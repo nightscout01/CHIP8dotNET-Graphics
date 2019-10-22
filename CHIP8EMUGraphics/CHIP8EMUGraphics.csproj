@@ -64,6 +64,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="CHIP8.cs" />
+    <Compile Include="CHIP8Graphics.cs" />
     <Compile Include="CPU.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>

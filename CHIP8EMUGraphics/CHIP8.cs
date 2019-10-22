@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Timers;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 
 namespace CHIP8EMUGraphics
 {
@@ -15,6 +16,8 @@ namespace CHIP8EMUGraphics
         private const uint CLOCK_SPEED = 2000;  // our emulated clock speed in Hz
         private readonly CPU emuCPU;  // our emulated CHIP-8 CPU
         private readonly System.Timers.Timer cycleTimer;
+        private readonly CHIP8Graphics graphicsAdapter;
+       // private BitmapSource graphics;
 
 
         // PUT SOME GRAPHICS STUFF HERE (maybe)?
@@ -35,6 +38,7 @@ namespace CHIP8EMUGraphics
                 [0x8] = Key.S,
 
             };
+            graphicsAdapter = new CHIP8Graphics();
             RAM = new byte[4096];  // initialize the byte array that holds our emulated memory 
             GraphicsArray = new byte[64, 32];  // CHIP-8 graphics are a black and white 64x32 grid
             key = new byte[16];  // CHIP-8 has a strange hex based keyboard, this is where we store the keypresses.
@@ -44,7 +48,7 @@ namespace CHIP8EMUGraphics
             cycleTimer.Interval = intervalTime;
             cycleTimer.Elapsed += CycleEvent;  // add our event
             cycleTimer.Enabled = true;  // enable the timer
-            emuCPU = new CPU(RAM, keyMap);
+            emuCPU = new CPU(RAM, keyMap,graphicsAdapter);
         }
 
         public void CycleEvent(object source, ElapsedEventArgs e)
