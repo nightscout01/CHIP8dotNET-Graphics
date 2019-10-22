@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,9 +21,16 @@ namespace CHIP8EMUGraphics
     /// </summary>
     public partial class MainWindow : Window
     {
+        private const string ROM_PATH = @"C:\Users\night\Downloads\DivisionTest.ch8";  // path to rom image to load
         public MainWindow()
         {
             InitializeComponent();
+            CHIP8 chip8 = new CHIP8();  // temp for now
+            byte[] romToLoad = File.ReadAllBytes(ROM_PATH);
+            chip8.LoadProgram(romToLoad);
+            chip8.BeginEmulation();
+            Console.WriteLine("press enter to exit at any time");
+            Console.ReadLine();  // stop when user presses a key
         }
     }
 }

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Windows.Input;
 
-namespace CHIP8EMU
+namespace CHIP8EMUGraphics
 {
     class CPU
     {
@@ -15,6 +15,7 @@ namespace CHIP8EMU
         private System.Diagnostics.Stopwatch stopWatch;
         private long timestamp;
         private byte[] Vreg;
+        private Dictionary<byte, Key> keyboardMapping;
         // ushort is an unsigned 16 bit integer (VS complains when using UInt16)
         private ushort I;  // index register, 16 bits  (NOT THE INSTRUCTION POINTER)
         private ushort PC;  // program counter/instruction pointer, 16 bits
@@ -34,11 +35,12 @@ namespace CHIP8EMU
 
         //  private Dictionary<int, Func<ushort, bool>> lookupTable = new Dictionary<int, Func<ushort, bool>>();
 
-        public CPU(byte[] RAM)
+        public CPU(byte[] RAM, Dictionary<byte, Key> keyboardMapping)
         {
             memory = RAM;  // take our emulated RAM, with our program already loaded in
             //this.clock_speed = clock_speed;  // set our clock speed, so we can know when to decrement our timers
             stopWatch = new System.Diagnostics.Stopwatch();
+            this.keyboardMapping = keyboardMapping;  // set our keyboard map to the one passed in.
             delay_timer = 0;
             sound_timer = 0;
             timestamp = 0;
@@ -290,14 +292,20 @@ namespace CHIP8EMU
                     PC += 2;
                     break;
                 case 0xE000:  // opcode 0xEXNN
-                    bool keyPressed = false;  // just for temp use
                     switch (lastEightBits)
                     {
                         case 0x9E:  // skips the next instruction if key stored in Vx is pressed.
                             // do fancy keypress handling here
-                            if (keyPressed)
+                            Key pressedKey;
+                            bool validMapping = keyboardMapping.TryGetValue(Vx, out pressedKey);
+                            if (!validMapping)  // if we don't have a mapping for the hex key in Vx, we definitely can't have pressed it, so we "return false"
                             {
-                                PC += 4;
+                                PC += 2;
+                                break;
+                            }
+                            if (Keyboard.IsKeyDown(pressedKey))  // check to see if the requested key is pressed
+                            {
+                                PC += 4;  // if it is, skip the next instruction
                             }
                             else
                             {
@@ -305,8 +313,9 @@ namespace CHIP8EMU
                             }
                             break;
                         case 0xA1:  // skips the next instruction if key stored in Vx isn't pressed.
-                            // do fancy keypress handling here
-                            if (keyPressed)
+                            Key pressedKey2;  // yes kind of gross with the code duplication but there's a lot of weird scoping issues with these switch statements
+                            bool validMapping2 = keyboardMapping.TryGetValue(Vx, out pressedKey2);
+                            if (!validMapping2 || Keyboard.IsKeyUp(pressedKey2))
                             {
                                 PC += 2;
                             }
@@ -324,11 +333,19 @@ namespace CHIP8EMU
                             Vx = delay_timer;
                             PC += 2;
                             break;
-                        case 0x0A:  // A key press is awaited, and then stored in VX. 
-                                    //(Blocking Operation. All instruction halted until next key event)
-                                    // TODO IMPLEMENT KEY PRESS STUFF
-                                    // Vx = GetKeyPressed();
-                            PC += 2;
+                        case 0x0A:  // A key press is awaited, and then stored in VX. (Blocking Operation. All instruction halted until next key event)
+                            Key requestedKey;
+                            bool validMapping = keyboardMapping.TryGetValue(Vx, out requestedKey);
+                            if (!validMapping)  // we're stuck in an infinite wait loop if this happens. If the system is waiting for a specific key
+                                                // and that key just isn't mapped, we can't move on, ever.
+                            {
+                                break;
+                            }
+                            if (Keyboard.IsKeyDown(requestedKey))  // if the key is pressed, then we can increment the program counter and get out of this wait 
+                                                                   // condition.
+                            {
+                                PC += 2;
+                            }
                             break;
                         case 0x15:
                             delay_timer = Vx;  // set the delay timer to VX

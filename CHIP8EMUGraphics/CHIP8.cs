@@ -1,15 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading;
 using System.Timers;
 using System.Windows.Input;
 
-namespace CHIP8EMU
+namespace CHIP8EMUGraphics
 {
     class CHIP8
     {
-        //private readonly Dictionary<byte,Key>()
+        private readonly Dictionary<byte, Key> keyMap;  // our map from the weird CHIP8 4x4 hex keyboard to actual windows keys 
         private readonly byte[] RAM;  // our emulated system RAM
         private byte[,] GraphicsArray;  // our 2D graphics array
         private readonly byte[] key;  // the weird hex keyboard this thing uses
@@ -23,7 +21,20 @@ namespace CHIP8EMU
 
         public CHIP8()
         {
-            //System.Windows.Input.KeyStates;
+            keyMap = new Dictionary<byte, Key>()  // only have the directional keys hooked up right now
+            {
+                //[0x1] = Key.D1,
+                //[0x2] = Key.D2,
+                //[0x3] = Key.D3,
+                //[0x4] = Key.D4,
+                [0x2] = Key.W,
+               // [0x3] = Key.E,
+                [0x4] = Key.A,
+                //[0x5] = Key.
+                [0x6] = Key.D,
+                [0x8] = Key.S,
+
+            };
             RAM = new byte[4096];  // initialize the byte array that holds our emulated memory 
             GraphicsArray = new byte[64, 32];  // CHIP-8 graphics are a black and white 64x32 grid
             key = new byte[16];  // CHIP-8 has a strange hex based keyboard, this is where we store the keypresses.
@@ -33,7 +44,7 @@ namespace CHIP8EMU
             cycleTimer.Interval = intervalTime;
             cycleTimer.Elapsed += CycleEvent;  // add our event
             cycleTimer.Enabled = true;  // enable the timer
-            emuCPU = new CPU(RAM);
+            emuCPU = new CPU(RAM, keyMap);
         }
 
         public void CycleEvent(object source, ElapsedEventArgs e)
