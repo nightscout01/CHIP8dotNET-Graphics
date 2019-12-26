@@ -14,7 +14,7 @@ namespace CHIP8EMUGraphics
         private byte sound_timer;  // when this one osn't zero, there's a beep
         private System.Diagnostics.Stopwatch stopWatch;
         private long timestamp;
-        private byte[] Vreg;
+        private readonly byte[] Vreg;
         public byte[] graphicsArray;
         private Dictionary<byte, Key> keyboardMapping;
         private Dictionary<Key, byte> keyValueMapping;
@@ -41,7 +41,7 @@ namespace CHIP8EMUGraphics
 
         public CPU(byte[] RAM, Dictionary<byte, Key> keyboardMapping, CHIP8Graphics graphicsAdapter)
         {
-            this.fontSET = new byte[] {
+            fontSET = new byte[] {   // this is required for CHIP8 interpreters
     0xF0, 0x90, 0x90, 0x90, 0xF0, //0
     0x20, 0x60, 0x20, 0x20, 0x70, //1
     0xF0, 0x10, 0xF0, 0x80, 0xF0, //2
@@ -498,7 +498,6 @@ namespace CHIP8EMUGraphics
 
         private void DisassembleOpCode(ushort opCode)
         {
-            // short[] temp = Encoding.GetBytes()
             // two byte OPCODE for this system
             // this code was kinda haphazardly ported from C++, it's here only as a debugging tool to see which
             // the actual names of the operations instead of just hex.

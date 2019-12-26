@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -12,21 +7,13 @@ namespace CHIP8EMUGraphics
 {
     class CHIP8Graphics
     {
-        //private PixelFormat pf = PixelFormats.BlackWhite;
         private const int width = 64;  // just for simplicity's sake
         private const int height = 32;
-        //private int rawStride;
-        //private byte[] rawImage;
-        //public BitmapSource bitmap;
         public WriteableBitmap Screen { get; }
 
         public CHIP8Graphics()
         {
             Screen = new WriteableBitmap(width, height, 96, 96, PixelFormats.Pbgra32, null);//new WriteableBitmap(width, height, 96, 96, PixelFormats.BlackWhite, null);  // a writeable bitmap
-            //rawStride = (width * height);  // since we're only using 1 bit per pixel
-            ////rawStride = (width * pf.BitsPerPixel + 7) / 8;  // stride is weird, hope this works!
-            //rawImage = new byte[rawStride * height];
-            //bitmap = BitmapSource.Create(width, height, 96, 96, pf, null, rawImage, rawStride);
         }
 
         public void ClearScreen()  // clear the screen, setting everything to black
@@ -72,7 +59,7 @@ namespace CHIP8EMUGraphics
             RenderPixelByteArray(ee);
         }
 
-        public byte[,] GenerateRandomBWArray()
+        public byte[,] GenerateRandomBWArray()  // just for debugging, still kinda useful
         {
             byte[,] b = new byte[width, height];
             Random rand = new Random();
@@ -93,7 +80,7 @@ namespace CHIP8EMUGraphics
             return b;
         }
 
-        public byte[] GenerateRand1DArray()
+        public byte[] GenerateRand1DArray()  // also only for debugging
         {
             Random ra = new Random();
             byte[] b = new byte[4096];

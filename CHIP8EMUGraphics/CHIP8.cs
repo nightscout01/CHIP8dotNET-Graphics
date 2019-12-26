@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Timers;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media.Imaging;
 
 namespace CHIP8EMUGraphics
 {
@@ -12,17 +10,10 @@ namespace CHIP8EMUGraphics
     {
         private readonly Dictionary<byte, Key> keyMap;  // our map from the weird CHIP8 4x4 hex keyboard to actual windows keys 
         private readonly byte[] RAM;  // our emulated system RAM
-        private byte[,] GraphicsArray;  // our 2D graphics array
-        private readonly byte[] key;  // the weird hex keyboard this thing uses
         private const ushort PROGRAM_START = 0x200;  // usual start location of code in program ROM. (512) in decimal
-        private const uint CLOCK_SPEED = 2000;  // our emulated clock speed in Hz
         private readonly CPU emuCPU;  // our emulated CHIP-8 CPU
-        private readonly System.Timers.Timer cycleTimer;
+        private readonly Timer cycleTimer;
         private readonly CHIP8Graphics graphicsAdapter;
-       // private BitmapSource graphics;
-
-
-        // PUT SOME GRAPHICS STUFF HERE (maybe)?
 
         public CHIP8(CHIP8Graphics graphics)
         {
@@ -49,11 +40,11 @@ namespace CHIP8EMUGraphics
             };
             graphicsAdapter = graphics;
             RAM = new byte[4096];  // initialize the byte array that holds our emulated memory 
-            GraphicsArray = new byte[64, 32];  // CHIP-8 graphics are a black and white 64x32 grid
-            key = new byte[16];  // CHIP-8 has a strange hex based keyboard, this is where we store the keypresses.
-            cycleTimer = new System.Timers.Timer();
-            cycleTimer.AutoReset = true;
-            double intervalTime = 1; //1.0 / CLOCK_SPEED * 1000.0;  // translate from frequency to period and multiply by 1000 to get the interval time in ms
+            cycleTimer = new Timer
+            {
+                AutoReset = true
+            };
+            double intervalTime = 1; //1.0 / CLOCK_SPEED * 1000.0; translate from frequency to period and multiply by 1000 to get the interval time in ms
             cycleTimer.Interval = intervalTime;
             cycleTimer.Elapsed += CycleEvent;  // add our event
             cycleTimer.Enabled = true;  // enable the timer
@@ -76,15 +67,6 @@ namespace CHIP8EMUGraphics
             }
             emuCPU.EmulateCycle();
            // Console.WriteLine("CYCLE");
-        }
-
-        public void TimedEmulation()
-        {
-            //loop at 100HZ WHILE()
-            // 500 Hz means 500 ops/second. 
-
-
-            // ENDWHILE
         }
 
         public void BeginEmulation()
