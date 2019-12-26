@@ -169,31 +169,5 @@ namespace CHIP8EMUGraphics
             int stride = bytesPerPixel * width; // general formula valid for all PixelFormats
             Screen.WritePixels(new Int32Rect(0, 0, width, height), pixelByteArrayOfColors, stride, 0);
         }
-
-    //    public void H()
-    //    {
-    //        Random rand = new Random();
-    //        // Pixelformat of Bgra32 results always in 4 bytes per pixel
-    //        //Screen = writeableBitmap;
-    //        int bytesPerPixel = (Screen.Format.BitsPerPixel + 7) / 8; // general formula
-    //        int stride = bytesPerPixel * width; // general formula valid for all PixelFormats
-    //     //   Console.WriteLine("s " + stride);
-    //        byte[] pixelByteArrayOfColors = new byte[stride * height]; // General calculation of buffer size
-
-    //        // The numbers in the array are indices to the used BitmapPalette, 
-    //        //     since we initialized it with null in the writeableBitmap init, they refer directly to RGBA, but only in this case.
-    //        // Choose a light green color for whole bitmap (for not easy to find commented MSDN example with random colors, see https://msdn.microsoft.com/en-us/library/system.windows.media.imaging.writeablebitmap(VS.85).aspx
-    //        for (int pixel = 0; pixel < pixelByteArrayOfColors.Length; pixel += bytesPerPixel)
-    //        {
-    //            // pixelByteArrayOfColors[pixel] = 1;
-    //            //Console.WriteLine(pixelByteArrayOfColors[pixel]);
-    //            pixelByteArrayOfColors[pixel] = 0;        // blue (depends normally on BitmapPalette)
-    //            pixelByteArrayOfColors[pixel + 1] = 0;  // green (depends normally on BitmapPalette)
-    //            pixelByteArrayOfColors[pixel + 2] = 0;    // red (depends normally on BitmapPalette)
-    //            pixelByteArrayOfColors[pixel + 3] = 255;   // alpha (depends normally on BitmapPalette)
-    //        }
-
-    //        Screen.WritePixels(new Int32Rect(0, 0, width, height), pixelByteArrayOfColors, stride, 0);
-    //    }
     }
 }

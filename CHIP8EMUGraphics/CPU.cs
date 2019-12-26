@@ -12,8 +12,6 @@ namespace CHIP8EMUGraphics
         public byte[] memory;  // the emulated RAM to use for this emulator
         private byte delay_timer;  // the closest thing to an interupt that a CHIP-8 system has
         private byte sound_timer;  // when this one osn't zero, there's a beep
-        private const uint FONT_BASE = 0x0;
-        //private uint clock_speed;
         private System.Diagnostics.Stopwatch stopWatch;
         private long timestamp;
         private byte[] Vreg;
