@@ -8,7 +8,7 @@ namespace CHIP8EMUGraphics
 {
     class CPU
     {
-        private const bool DEBUG = true;  // when enabled, print out dissasembled OP codes
+        private const bool DEBUG = false;  // when enabled, print out dissasembled OP codes
         public byte[] memory;  // the emulated RAM to use for this emulator
         private byte delay_timer;  // the closest thing to an interupt that a CHIP-8 system has
         private byte sound_timer;  // when this one osn't zero, there's a beep
@@ -17,7 +17,7 @@ namespace CHIP8EMUGraphics
         private readonly byte[] Vreg;
         public byte[] graphicsArray;
         private Dictionary<byte, Key> keyboardMapping;
-        private Dictionary<Key, byte> keyValueMapping;
+        private readonly Dictionary<Key, byte> keyValueMapping;
         public bool drawflag;
         // ushort is an unsigned 16 bit integer (VS complains when using UInt16)
         private ushort I;  // index register, 16 bits  (NOT THE INSTRUCTION POINTER)
