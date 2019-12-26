@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Timers;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 
@@ -22,29 +24,36 @@ namespace CHIP8EMUGraphics
 
         // PUT SOME GRAPHICS STUFF HERE (maybe)?
 
-        public CHIP8()
+        public CHIP8(CHIP8Graphics graphics)
         {
             keyMap = new Dictionary<byte, Key>()  // only have the directional keys hooked up right now
             {
-                //[0x1] = Key.D1,
-                //[0x2] = Key.D2,
-                //[0x3] = Key.D3,
-                //[0x4] = Key.D4,
-                [0x2] = Key.W,
-               // [0x3] = Key.E,
-                [0x4] = Key.A,
-                //[0x5] = Key.
-                [0x6] = Key.D,
+                [0x1] = Key.D1,
+                [0x2] = Key.D2,
+                [0x3] = Key.D3,
+                [0x4] = Key.Q,
+                [0x5] = Key.W,
+                [0x6] = Key.E,
+                [0x7] = Key.A,
                 [0x8] = Key.S,
+                [0x9] = Key.D,
+                [0xA] = Key.Z,
+                [0xB] = Key.C,
+                [0xC] = Key.D4,
+                [0xD] = Key.R,
+                [0xE] = Key.F,
+                [0xF] = Key.V,
+                [0x0] = Key.X,
+
 
             };
-            graphicsAdapter = new CHIP8Graphics();
+            graphicsAdapter = graphics;
             RAM = new byte[4096];  // initialize the byte array that holds our emulated memory 
             GraphicsArray = new byte[64, 32];  // CHIP-8 graphics are a black and white 64x32 grid
             key = new byte[16];  // CHIP-8 has a strange hex based keyboard, this is where we store the keypresses.
             cycleTimer = new System.Timers.Timer();
             cycleTimer.AutoReset = true;
-            double intervalTime = 1.0 / CLOCK_SPEED * 1000.0;  // translate from frequency to period and multiply by 1000 to get the interval time in ms
+            double intervalTime = 1; //1.0 / CLOCK_SPEED * 1000.0;  // translate from frequency to period and multiply by 1000 to get the interval time in ms
             cycleTimer.Interval = intervalTime;
             cycleTimer.Elapsed += CycleEvent;  // add our event
             cycleTimer.Enabled = true;  // enable the timer
@@ -53,7 +62,20 @@ namespace CHIP8EMUGraphics
 
         public void CycleEvent(object source, ElapsedEventArgs e)
         {
+            if (emuCPU.drawflag)
+            {
+                emuCPU.drawflag = false;
+                if(Application.Current == null)
+                {
+                    return;
+                }
+                Application.Current.Dispatcher.Invoke(() => {
+                    //Console.WriteLine("RENDERING");
+                    graphicsAdapter.RenderByteArray(emuCPU.graphicsArray);
+                });
+            }
             emuCPU.EmulateCycle();
+           // Console.WriteLine("CYCLE");
         }
 
         public void TimedEmulation()
@@ -69,10 +91,11 @@ namespace CHIP8EMUGraphics
         {
             cycleTimer.Start();
             Console.WriteLine("started timer");
+            //Thread.Sleep(2000);
             //while (true)
             //{
             //    emuCPU.EmulateCycle(); // :OOOO
-            //    Thread.Sleep(100);
+            //    Thread.Sleep(10);
             //}
         }
 

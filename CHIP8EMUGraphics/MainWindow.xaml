@@ -7,8 +7,9 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        <Image x:Name="ScreenImage" HorizontalAlignment="Left" Height="352" Margin="63,34,0,0" VerticalAlignment="Top" Width="599"/>
-        <Button x:Name="Test" Content="Button" HorizontalAlignment="Left" Margin="710,370,0,0" VerticalAlignment="Top" Width="75" Click="Test_Click"/>
+        <Image x:Name="ScreenImage" HorizontalAlignment="Left" Height="350" Margin="45,26,0,0" VerticalAlignment="Top" Width="700"/>
+        <Button x:Name="Test" Content="Button" HorizontalAlignment="Left" Margin="710,394,0,0" VerticalAlignment="Top" Width="75" Click="Test_Click"/>
+        <Button x:Name="Open_ROM" Content="Open" HorizontalAlignment="Left" Margin="185,381,0,0" VerticalAlignment="Top" Width="75" Click="Open_ROM_Click"/>
 
     </Grid>
 </Window>

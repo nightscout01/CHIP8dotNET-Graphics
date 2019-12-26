@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Windows;
 using System.Windows.Input;
 
 namespace CHIP8EMUGraphics
@@ -7,7 +9,7 @@ namespace CHIP8EMUGraphics
     class CPU
     {
         private const bool DEBUG = true;  // when enabled, print out dissasembled OP codes
-        private byte[] memory;  // the emulated RAM to use for this emulator
+        public byte[] memory;  // the emulated RAM to use for this emulator
         private byte delay_timer;  // the closest thing to an interupt that a CHIP-8 system has
         private byte sound_timer;  // when this one osn't zero, there's a beep
         private const uint FONT_BASE = 0x0;
@@ -15,8 +17,10 @@ namespace CHIP8EMUGraphics
         private System.Diagnostics.Stopwatch stopWatch;
         private long timestamp;
         private byte[] Vreg;
-        private byte[] graphicsArray;
+        public byte[] graphicsArray;
         private Dictionary<byte, Key> keyboardMapping;
+        private Dictionary<Key, byte> keyValueMapping;
+        public bool drawflag;
         // ushort is an unsigned 16 bit integer (VS complains when using UInt16)
         private ushort I;  // index register, 16 bits  (NOT THE INSTRUCTION POINTER)
         private ushort PC;  // program counter/instruction pointer, 16 bits
@@ -35,15 +39,37 @@ namespace CHIP8EMUGraphics
 
         //  private Dictionary<int, Func<ushort, bool>> lookupTable = new Dictionary<int, Func<ushort, bool>>();
 
+        private byte[] fontSET;
+
         public CPU(byte[] RAM, Dictionary<byte, Key> keyboardMapping, CHIP8Graphics graphicsAdapter)
         {
+            this.fontSET = new byte[] {
+    0xF0, 0x90, 0x90, 0x90, 0xF0, //0
+    0x20, 0x60, 0x20, 0x20, 0x70, //1
+    0xF0, 0x10, 0xF0, 0x80, 0xF0, //2
+    0xF0, 0x10, 0xF0, 0x10, 0xF0, //3
+    0x90, 0x90, 0xF0, 0x10, 0x10, //4
+    0xF0, 0x80, 0xF0, 0x10, 0xF0, //5
+    0xF0, 0x80, 0xF0, 0x90, 0xF0, //6
+    0xF0, 0x10, 0x20, 0x40, 0x40, //7
+    0xF0, 0x90, 0xF0, 0x90, 0xF0, //8
+    0xF0, 0x90, 0xF0, 0x10, 0xF0, //9
+    0xF0, 0x90, 0xF0, 0x90, 0x90, //A
+    0xE0, 0x90, 0xE0, 0x90, 0xE0, //B
+    0xF0, 0x80, 0x80, 0x80, 0xF0, //C
+    0xE0, 0x90, 0x90, 0x90, 0xE0, //D
+    0xF0, 0x80, 0xF0, 0x80, 0xF0, //E
+    0xF0, 0x80, 0xF0, 0x80, 0x80  //F
+};
             memory = RAM;  // take our emulated RAM, with our program already loaded in
             //this.clock_speed = clock_speed;  // set our clock speed, so we can know when to decrement our timers
             stopWatch = new System.Diagnostics.Stopwatch();
             this.keyboardMapping = keyboardMapping;  // set our keyboard map to the one passed in.
+            keyValueMapping = this.keyboardMapping.ToDictionary(kp => kp.Value, kp => kp.Key);
             delay_timer = 0;
             sound_timer = 0;
             this.graphicsAdapter = graphicsAdapter;
+            drawflag = false;
             graphicsArray = new byte[2048];
             timestamp = 0;
             programStack = new Stack<ushort>(16);  // this is implemented as an array under the hood, I hope it's fast enough for our use.
@@ -62,6 +88,11 @@ namespace CHIP8EMUGraphics
             currentOPCode = 0;
             I = 0;
             SP = 0;
+            for (int i = 0; i < 80; ++i)  // load font
+            {
+                memory[i] = fontSET[i];
+            }
+
             // clear anything else that needs clearing
             return true;  // TODO
         }
@@ -118,6 +149,8 @@ namespace CHIP8EMUGraphics
             if (sound_timer != 0)
             {
                 // BEEP SOUND
+                //Console.Beep();
+                //Console.Beep(2)
                 Console.WriteLine("BEEEP");
             }
             // there's getting to be too many of these, once this switch table is done, copy and paste them into their parts, maybe use a function? maybe use a #DEFINE????
@@ -140,8 +173,11 @@ namespace CHIP8EMUGraphics
                     switch (opCode & 0x000F)
                     {
                         case 0x0000:  //0x00E0, clears the screen
-                            graphicsArray = new byte[2048];  // just reallocate the dang thing. 
-                            graphicsAdapter.ClearScreen();
+                            for (int i = 0; i < 2048; ++i)
+                            {
+                                graphicsArray[i] = 0;
+                            }
+                            drawflag = true;
                             PC += 2;
                             break;
                         case 0x000E:  // 0x00EE, return from subroutine
@@ -253,6 +289,7 @@ namespace CHIP8EMUGraphics
                             {
                                 Vreg[0xF] = 0;  // set noborrow flag false
                             }
+                            Vx -= Vy;  // completely forgot to implement this opcode
                             PC += 2;
                             break;
                         case 0xE:  // store MSB of Vx in VF, shift Vx to the left by 1
@@ -286,31 +323,42 @@ namespace CHIP8EMUGraphics
                     PC += 2;
                     break;
                 case 0xD000:  // opcode 0xDXYN
-                              /* Draws a sprite at coordinate (VX, VY) that has a width of 8 pixels and a height of N pixels. 
-                               * Each row of 8 pixels is read as bit-coded starting from memory location I; I value doesn’t change after 
-                               * the execution of this instruction. As described above, 
-                               * VF is set to 1 if any screen pixels are flipped from set to unset when the sprite is drawn, 
-                               * and to 0 if that doesn’t happen
-                               */
-                              // Do some fancy signaling to notify graphics subsystem.
-                    Vreg[0xF] = 0;  // set this to zero before we start
-                    for (ushort yG = 0; yG < lastFourBits; ++yG)
+                    /* Draws a sprite at coordinate (VX, VY) that has a width of 8 pixels and a height of N pixels. 
+                     * Each row of 8 pixels is read as bit-coded starting from memory location I; I value doesn’t change after 
+                     * the execution of this instruction. As described above, 
+                     * VF is set to 1 if any screen pixels are flipped from set to unset when the sprite is drawn, 
+                     * and to 0 if that doesn’t happen
+                     */
+                    // Do some fancy signaling to notify graphics subsystem.
+                    //ushort x = V[(opcode & 0x0F00) >> 8];
+                    // ushort y = V[(opcode & 0x00F0) >> 4];
+                    ushort height = (ushort)(opCode & 0x000F);
+                    ushort pixel;
+
+                    Vreg[0xF] = 0;
+                    for (int yline = 0; yline < height; yline++)
                     {
-                        byte mY = memory[I + yG];
-                        for (ushort xG = 0; xG < 8; ++xG)
+                        pixel = memory[I + yline];
+                        //   Console.WriteLine("pixel is " + pixel);
+                        // Console.WriteLine("coords are " + Vx + " " + Vy);
+                        for (int xline = 0; xline < 8; xline++)
                         {
-                            if ((mY & (0x80 >> xG)) != 0)
+                            if ((pixel & (0x80 >> xline)) != 0)
                             {
-                                ushort pixel = (ushort)(((Vx + xG) + ((Vy + yG) << 6)) % 2048);
-                                Vreg[0xF] |= (byte) (graphicsArray[pixel] & 1);  // so much casting
-                                graphicsArray[pixel] = (byte) ~graphicsArray[pixel];
+                                if (graphicsArray[(Vx + xline + ((Vy + yline) * 64))] == 1)
+                                {
+                                    Vreg[0xF] = 1;
+                                }
+                                graphicsArray[Vx + xline + ((Vy + yline) * 64)] ^= 1;
                             }
                         }
                     }
-                   // graphicsAdapter.
+                    drawflag = true;
                     PC += 2;
                     break;
                 case 0xE000:  // opcode 0xEXNN
+                    Console.WriteLine("LOOKING FOR KEYPRESS");
+                    Console.WriteLine(Vx);
                     switch (lastEightBits)
                     {
                         case 0x9E:  // skips the next instruction if key stored in Vx is pressed.
@@ -325,6 +373,7 @@ namespace CHIP8EMUGraphics
                             if (Keyboard.IsKeyDown(pressedKey))  // check to see if the requested key is pressed
                             {
                                 PC += 4;  // if it is, skip the next instruction
+                                Console.WriteLine("KEY PRESS");
                             }
                             else
                             {
@@ -334,12 +383,17 @@ namespace CHIP8EMUGraphics
                         case 0xA1:  // skips the next instruction if key stored in Vx isn't pressed.
                             Key pressedKey2;  // yes kind of gross with the code duplication but there's a lot of weird scoping issues with these switch statements
                             bool validMapping2 = keyboardMapping.TryGetValue(Vx, out pressedKey2);
-                            if (!validMapping2 || Keyboard.IsKeyUp(pressedKey2))
+                            bool isUp = false;
+
+                            Application.Current.Dispatcher.Invoke(() => { isUp = Keyboard.IsKeyUp(pressedKey2); });
+
+                            if (!validMapping2 || isUp)
                             {
                                 PC += 2;
                             }
                             else
                             {
+                                Console.WriteLine("KEY PRESS");
                                 PC += 4;
                             }
                             break;
@@ -353,16 +407,28 @@ namespace CHIP8EMUGraphics
                             PC += 2;
                             break;
                         case 0x0A:  // A key press is awaited, and then stored in VX. (Blocking Operation. All instruction halted until next key event)
-                            Key requestedKey;
-                            bool validMapping = keyboardMapping.TryGetValue(Vx, out requestedKey);
-                            if (!validMapping)  // we're stuck in an infinite wait loop if this happens. If the system is waiting for a specific key
-                                                // and that key just isn't mapped, we can't move on, ever.
+                            byte keyDown = 0;
+                            bool pressed = false;
+                            Application.Current.Dispatcher.Invoke(() =>
                             {
-                                break;
-                            }
-                            if (Keyboard.IsKeyDown(requestedKey))  // if the key is pressed, then we can increment the program counter and get out of this wait 
-                                                                   // condition.
+                                byte b = 0;
+                                foreach (Key k in keyValueMapping.Keys)
+                                {
+                                    if (Keyboard.IsKeyDown(k))
+                                    {
+                                        pressed = true;
+                                        keyValueMapping.TryGetValue(k, out b);
+                                        keyDown = b;
+                                        break;
+                                    }
+                                }
+
+                            });
+
+                            if (pressed)  // if the key is pressed, then we can increment the program counter and get out of this wait 
+                                          // condition.
                             {
+                                Vx = keyDown;
                                 PC += 2;
                             }
                             break;
@@ -388,7 +454,7 @@ namespace CHIP8EMUGraphics
                             break;
                         case 0x29:  // 	Sets I to the location of the sprite for the character in VX. Characters 0-F 
                             // (in hexadecimal) are represented by a 4x5 font.
-                            I = (ushort)(FONT_BASE + (Vx * 5));  // lets just pray that this works
+                            I = (ushort)(Vx * 5);  // lets just pray that this works
                             PC += 2;
                             break;
                         case 0x33:  // BCD stuff, i have no idea what this "actually" does, but 
@@ -408,18 +474,20 @@ namespace CHIP8EMUGraphics
                             break;
                         case 0x55:  // Stores V0 to VX (including VX) in memory starting at address I. 
                             // The offset from I is increased by 1 for each value written, but I itself is left unmodified.
-                            for (int i = 0; i <= VRegXIdentifier; i++)
+                            for (int i = 0; i <= VRegXIdentifier; ++i)
                             {
                                 memory[I + i] = Vreg[i];
                             }
+                            // I += (ushort)(((opCode & 0x0F00) >> 8) + 1);
                             PC += 2;
                             break;
                         case 0x65: //Fills V0 to VX (including VX) with values from memory starting at address I. 
                             // The offset from I is increased by 1 for each value written, but I itself is left unmodified.
-                            for (int i = 0; i <= VRegXIdentifier; i++)
+                            for (int i = 0; i <= VRegXIdentifier; ++i)
                             {
                                 Vreg[i] = memory[I + i];
                             }
+                            //  I += (ushort)(((opCode & 0x0F00) >> 8) + 1);
                             PC += 2;
                             break;
                     }

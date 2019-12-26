@@ -18,11 +18,11 @@ namespace CHIP8EMUGraphics
         //private int rawStride;
         //private byte[] rawImage;
         //public BitmapSource bitmap;
-        public WriteableBitmap Screen;//{ get;}
+        public WriteableBitmap Screen { get; }
 
         public CHIP8Graphics()
         {
-            Screen = Screen = new WriteableBitmap(width, height, 96, 96, PixelFormats.Pbgra32, null);//new WriteableBitmap(width, height, 96, 96, PixelFormats.BlackWhite, null);  // a writeable bitmap
+            Screen = new WriteableBitmap(width, height, 96, 96, PixelFormats.Pbgra32, null);//new WriteableBitmap(width, height, 96, 96, PixelFormats.BlackWhite, null);  // a writeable bitmap
             //rawStride = (width * height);  // since we're only using 1 bit per pixel
             ////rawStride = (width * pf.BitsPerPixel + 7) / 8;  // stride is weird, hope this works!
             //rawImage = new byte[rawStride * height];
@@ -62,6 +62,13 @@ namespace CHIP8EMUGraphics
         {
             byte[] b = GenerateRand1DArray();
             byte[] ee = Get4ByteRep(b);
+            RenderPixelByteArray(ee);
+        }
+
+
+        public void RenderByteArray(byte[] arr)
+        {
+            byte[] ee = Get4ByteRep(arr);
             RenderPixelByteArray(ee);
         }
 
@@ -110,15 +117,24 @@ namespace CHIP8EMUGraphics
             //int stride = bytesPerPixel * width; // general formula valid for all PixelFormats
             int index = 0;
             byte[] pixelByteArrayOfColors = new byte[4*arr1d.GetLength(0)]; // General calculation of buffer size
-          //  Console.WriteLine(pixelByteArrayOfColors.Length);
             for (int i = 0; i < arr1d.GetLength(0); i++)
             {
-                //Console.WriteLine(index);
-                Console.WriteLine(arr1d[i]);
+               // Console.WriteLine(arr1d[i]);
+                byte toRender;
+                if(arr1d[i] == 1)
+                {
+                    toRender = 255;
+                } else if(arr1d[i] == 0)
+                {
+                    toRender = 0;
+                } else
+                {
+                    toRender = arr1d[i];
+                }
                 pixelByteArrayOfColors[index] = 0;        // blue nope
                 pixelByteArrayOfColors[index + 1] = 0;  // green nope
                 pixelByteArrayOfColors[index + 2] = 0;    // red nope
-                pixelByteArrayOfColors[index + 3] = arr1d[i];
+                pixelByteArrayOfColors[index + 3] = toRender;
                 index += bytesPerPixel;
             }
             return pixelByteArrayOfColors;
@@ -147,6 +163,8 @@ namespace CHIP8EMUGraphics
 
         public void RenderPixelByteArray(byte[] pixelByteArrayOfColors)
         {
+            //Console.WriteLine("CALL TO RENDERER");
+            //Console.WriteLine(pixelByteArrayOfColors.Max());
             int bytesPerPixel = (Screen.Format.BitsPerPixel + 7) / 8; // general formula
             int stride = bytesPerPixel * width; // general formula valid for all PixelFormats
             Screen.WritePixels(new Int32Rect(0, 0, width, height), pixelByteArrayOfColors, stride, 0);
