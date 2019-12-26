@@ -1,4 +1,8 @@
-﻿using System;
+﻿// Copyright Maurice Montag 2019
+// All Rights Reserved
+// See LICENSE file for more information
+
+using System;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -13,10 +17,10 @@ namespace CHIP8EMUGraphics
 
         public CHIP8Graphics()
         {
-            Screen = new WriteableBitmap(width, height, 96, 96, PixelFormats.Pbgra32, null);//new WriteableBitmap(width, height, 96, 96, PixelFormats.BlackWhite, null);  // a writeable bitmap
+            Screen = new WriteableBitmap(width, height, 96, 96, PixelFormats.Pbgra32, null);  // create a writeable bitmap to be our screen
         }
 
-        public void ClearScreen()  // clear the screen, setting everything to black
+        public void ClearScreen()  // clear the screen, setting everything to clear
         {
 
             byte[,] b = new byte[width, height];
@@ -30,7 +34,7 @@ namespace CHIP8EMUGraphics
             RenderPixelByteArray(Get4ByteRep(b));
         }
 
-        public void UpdateGraphics(byte[,] graphicsArray)
+        public void UpdateGraphics(byte[,] graphicsArray)  // updates the graphics drawn on the screen given a 2D array
         {
             byte[] graphics1D = new byte[height * width * PixelFormats.BlackWhite.BitsPerPixel];  // 1 byte per pixel
             int index = 0;
@@ -45,7 +49,7 @@ namespace CHIP8EMUGraphics
             Screen.WritePixels(rect, graphics1D, width, 0);  // oh good lord
         }
 
-        public void GraphicsTestDriver()
+        public void GraphicsTestDriver()  // just for debugging
         {
             byte[] b = GenerateRand1DArray();
             byte[] ee = Get4ByteRep(b);
@@ -53,7 +57,7 @@ namespace CHIP8EMUGraphics
         }
 
 
-        public void RenderByteArray(byte[] arr)
+        public void RenderByteArray(byte[] arr)  // given a 1D array of 1 bit per pixel data, convert to 4 byte rep. and display
         {
             byte[] ee = Get4ByteRep(arr);
             RenderPixelByteArray(ee);
@@ -98,7 +102,8 @@ namespace CHIP8EMUGraphics
             return b;
         }
 
-        public byte[] Get4ByteRep(byte[] arr1d)
+        public byte[] Get4ByteRep(byte[] arr1d)  // weird issues in WPF while trying to render the 1 bit per pixel version of this
+                // so we need to increase it to a 4 byte per pixel representation for no reason :(
         {
             int bytesPerPixel = (Screen.Format.BitsPerPixel + 7) / 8; // general formula
             //int stride = bytesPerPixel * width; // general formula valid for all PixelFormats
@@ -148,7 +153,7 @@ namespace CHIP8EMUGraphics
             return pixelByteArrayOfColors;
         }
 
-        public void RenderPixelByteArray(byte[] pixelByteArrayOfColors)
+        public void RenderPixelByteArray(byte[] pixelByteArrayOfColors)  // render the actual output pixels to our writeable bitmap "display"
         {
             //Console.WriteLine("CALL TO RENDERER");
             //Console.WriteLine(pixelByteArrayOfColors.Max());
