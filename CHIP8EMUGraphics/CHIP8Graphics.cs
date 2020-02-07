@@ -106,12 +106,10 @@ namespace CHIP8EMUGraphics
                 // so we need to increase it to a 4 byte per pixel representation for no reason :(
         {
             int bytesPerPixel = (Screen.Format.BitsPerPixel + 7) / 8; // general formula
-            //int stride = bytesPerPixel * width; // general formula valid for all PixelFormats
             int index = 0;
             byte[] pixelByteArrayOfColors = new byte[4*arr1d.GetLength(0)]; // General calculation of buffer size
             for (int i = 0; i < arr1d.GetLength(0); i++)
             {
-               // Console.WriteLine(arr1d[i]);
                 byte toRender;
                 if(arr1d[i] == 1)
                 {
@@ -155,8 +153,6 @@ namespace CHIP8EMUGraphics
 
         public void RenderPixelByteArray(byte[] pixelByteArrayOfColors)  // render the actual output pixels to our writeable bitmap "display"
         {
-            //Console.WriteLine("CALL TO RENDERER");
-            //Console.WriteLine(pixelByteArrayOfColors.Max());
             int bytesPerPixel = (Screen.Format.BitsPerPixel + 7) / 8; // general formula
             int stride = bytesPerPixel * width; // general formula valid for all PixelFormats
             Screen.WritePixels(new Int32Rect(0, 0, width, height), pixelByteArrayOfColors, stride, 0);
